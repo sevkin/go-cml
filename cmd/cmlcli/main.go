@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"os/signal"
@@ -10,7 +11,8 @@ import (
 func main() {
 	const envURL = "CML_URL"
 
-	// flag.Parse()
+	flagRestyDebug := flag.Bool("resty-debug", false, "resty debug output")
+	flag.Parse()
 
 	// log.SetFlags(0)
 
@@ -18,6 +20,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("can`t init pinger with err: %v", err)
 	}
+
+	pinger.SetDebug(*flagRestyDebug)
 
 	term := make(chan struct{}, 1)
 
