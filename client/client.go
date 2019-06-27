@@ -1,4 +1,7 @@
 // Package client https://v8.1c.ru/edi/edi_stnd/131/
+// https://dev.1c-bitrix.ru/api_help/sale/algorithms/index.php
+// https://www.clickon.ru/blog/exchange-1c-with-bitrix/
+// https://mrcappuccino.ru/blog/post/1c-exchange
 package client
 
 import (
@@ -13,7 +16,9 @@ type (
 	// Client of CommerceML site exchange
 	Client struct {
 		*resty.Client
-		_type string
+		_type     string
+		sessID    string
+		timestamp string
 	}
 
 	// Type is Catalog or Sales
@@ -59,16 +64,33 @@ func (c *Client) Auth(username, password string) error {
 	}
 
 	cred := strings.Split(res.String(), "\n")
-	if len(cred) < 3 || (len(cred) >= 3 && cred[0] != "success") {
+	if len(cred) < 3 {
+		return fmt.Errorf("checkauth unexpected response: %s", res.String())
+	}
+	if cred[0] != "success" {
 		return fmt.Errorf("checkauth unexpected response: %s", res.String())
 	}
 
 	c.Cookies = make([]*http.Cookie, 0)
-
 	c.SetCookie(&http.Cookie{
 		Name:  cred[1],
 		Value: cred[2],
 	})
 
+	c.sessID = ""
+	if len(cred) >= 4 {
+		s := strings.SplitAfterN(cred[3], "sessid=", 2)
+		if len(s) == 2 {
+			c.sessID = s[1]
+		} // TODO else log cred[3]
+	}
+
+	c.timestamp = ""
+	if len(cred) >= 5 {
+		s := strings.SplitAfterN(cred[4], "timestamp=", 2)
+		if len(s) == 2 {
+			c.timestamp = s[1]
+		} // TODO else log cred[4]
+	}
 	return nil
 }

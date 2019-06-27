@@ -19,12 +19,14 @@ func TestClientAuthSuccess(t *testing.T) {
 		MatchHeader("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=").
 		MatchParams(map[string]string{"mode": "checkauth", "type": client._type}).
 		Reply(200).
-		BodyString("success\ncookiename\ncookievalue\ntail\n")
+		BodyString("success\ncookiename\ncookievalue\nsessid=session\ntimestamp=time\n")
 
 	assert.Nil(t, client.Auth("username", "password"))
 	assert.Equal(t, 1, len(client.Cookies))
 	assert.Equal(t, "cookiename", client.Cookies[0].Name)
 	assert.Equal(t, "cookievalue", client.Cookies[0].Value)
+	assert.Equal(t, "session", client.sessID)
+	assert.Equal(t, "time", client.timestamp)
 }
 
 func TestClientReAuth(t *testing.T) {
@@ -35,7 +37,7 @@ func TestClientReAuth(t *testing.T) {
 	gock.New("http://localhost").
 		Get("/1c.php").
 		Reply(200).
-		BodyString("success\ncookiename\ncookievalue\ntail\n")
+		BodyString("success\ncookiename\ncookievalue\nsessid=session\ntimestamp=time\n")
 
 	assert.Nil(t, client.Auth("username", "password"))
 	assert.Equal(t, 1, len(client.Cookies))
@@ -43,13 +45,24 @@ func TestClientReAuth(t *testing.T) {
 	gock.New("http://localhost").
 		Get("/1c.php").
 		Reply(200).
-		BodyString("success\ncookiename2\ncookievalue2\ntail\n")
+		BodyString("success\ncookiename2\ncookievalue2\nsessid=session2\ntimestamp=time2\n")
 
 	assert.Nil(t, client.Auth("username", "password"))
 	assert.Equal(t, 1, len(client.Cookies))
 
 	assert.Equal(t, "cookiename2", client.Cookies[0].Name)
 	assert.Equal(t, "cookievalue2", client.Cookies[0].Value)
+	assert.Equal(t, "session2", client.sessID)
+	assert.Equal(t, "time2", client.timestamp)
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		Reply(200).
+		BodyString("success\ncookiename3\ncookievalue3\n")
+
+	assert.Nil(t, client.Auth("username", "password"))
+	assert.Equal(t, "", client.sessID)
+	assert.Equal(t, "", client.timestamp)
 }
 
 func TestClientAuthFailure(t *testing.T) {
