@@ -42,3 +42,37 @@ func TestCheckAuth(t *testing.T) {
 	assert.Equal(t, evFail, p.next)
 	assert.Equal(t, stNew, p.fsm.State)
 }
+
+func TestInit(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://localhost").
+		Get("/").
+		Reply(200).
+		BodyString("zip=yes\nfile_limit=1024\n")
+
+	p, _ := newPinger("https://localhost")
+	p.fsm.State = stAuth
+
+	err := p.fsm.Do(evInit)
+	assert.Nil(t, err)
+	assert.Equal(t, evFile, p.next)
+	assert.Equal(t, stInit, p.fsm.State)
+	assert.True(t, p.zip)
+	assert.Equal(t, 1024, p.flimit)
+
+	gock.New("https://localhost").
+		Get("/").
+		Reply(500).
+		BodyString("zip=yes\nfile_limit=1024\n")
+
+	p, _ = newPinger("https://localhost")
+	p.fsm.State = stAuth
+
+	err = p.fsm.Do(evInit)
+	assert.NotNil(t, err)
+	assert.Equal(t, evFail, p.next)
+	assert.Equal(t, stAuth, p.fsm.State)
+	assert.False(t, p.zip)
+	assert.Equal(t, 0, p.flimit)
+}

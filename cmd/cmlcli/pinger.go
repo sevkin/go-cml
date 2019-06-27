@@ -32,6 +32,8 @@ type (
 		username, password string
 		fsm                *fsm.FSM
 		next               fsm.Input
+		zip                bool
+		flimit             int
 	}
 )
 
@@ -96,10 +98,14 @@ func (p *pinger) _checkauth() error {
 	return err
 }
 
-func (p *pinger) _init() error {
-	// TODO if.. p.next = evImport else
-	p.next = evFile
-	return nil
+func (p *pinger) _init() (err error) {
+	p.zip, p.flimit, err = p.Init()
+	if err == nil {
+		p.next = evFile
+		return nil
+	}
+	p.next = evFail
+	return err
 }
 
 func (p *pinger) _file() error {
