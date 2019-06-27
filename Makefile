@@ -1,7 +1,7 @@
 all:
 
 test:
-	go test ./...
+	go test -timeout 30s ./...
 
 cmlcli:
 	cd cmd/cmlcli && go run main.go pinger.go
