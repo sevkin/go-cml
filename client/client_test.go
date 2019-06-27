@@ -1,6 +1,7 @@
 package client
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -105,4 +106,71 @@ func TestClientAuthServerError(t *testing.T) {
 
 	assert.NotNil(t, client.Auth("username", "password"))
 	assert.Equal(t, 0, len(client.Cookies))
+}
+
+// ////////////////////////////////////////////////////////////////////////////
+
+func TestClientInitSuccess(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		MatchHeader("Cookie", "cookiename=cookievalue").
+		MatchParams(map[string]string{"mode": "init", "type": client._type}).
+		Reply(200).
+		BodyString("zip=yes\nfile_limit=1024\n")
+
+	assert.Equal(t, 0, len(client.Cookies))
+	client.SetCookie(&http.Cookie{Name: "cookiename", Value: "cookievalue"})
+
+	zip, flimit, err := client.Init()
+	assert.Nil(t, err)
+	assert.Equal(t, 1024, flimit)
+	assert.True(t, zip)
+}
+
+func TestClientInitSessID(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		MatchParams(map[string]string{"mode": "init", "type": client._type, "sessid": "session"}).
+		Reply(200).
+		BodyString("zip=yes\nfile_limit=1024\n")
+
+	client.sessID = "session"
+	_, _, err := client.Init()
+	assert.Nil(t, err)
+}
+
+func TestClientInitFailed(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		Reply(200).
+		BodyString("zip=yes\nfile_limit=zero\n")
+
+	_, _, err := client.Init()
+	assert.NotNil(t, err)
+}
+
+func TestClientInitServerError(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		Reply(500).
+		BodyString("zip=yes\nfile_limit=1024\n")
+
+	_, _, err := client.Init()
+	assert.NotNil(t, err)
 }

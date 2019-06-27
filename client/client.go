@@ -7,6 +7,7 @@ package client
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	resty "gopkg.in/resty.v1"
@@ -93,4 +94,42 @@ func (c *Client) Auth(username, password string) error {
 		} // TODO else log cred[4]
 	}
 	return nil
+}
+
+// Init - Запрос параметров от сайта
+// returns zip, file_limit, error
+func (c *Client) Init() (bool, int, error) {
+	query := map[string]string{
+		"type": c._type,
+		"mode": "init",
+	}
+	if len(c.sessID) > 0 {
+		query["sessid"] = c.sessID
+	}
+
+	res, err := c.R().
+		SetQueryParams(query).
+		Get("/")
+
+	if err != nil {
+		return false, 0, err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		return false, 0, fmt.Errorf("init server error")
+	}
+
+	cred := strings.Split(res.String(), "\n")
+	if len(cred) == 2 {
+		z := strings.SplitAfterN(cred[0], "zip=", 2)
+		if len(z) == 2 {
+			f := strings.SplitAfterN(cred[1], "file_limit=", 2)
+			if len(f) == 2 {
+				if flimit, err := strconv.Atoi(f[1]); err == nil {
+					return z[1] == "yes", flimit, nil
+				}
+			}
+		}
+	}
+	return false, 0, fmt.Errorf("init unexpected response: %s", res.String())
 }
