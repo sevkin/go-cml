@@ -1,4 +1,4 @@
-module github.com/sevkin/cml
+module github.com/sevkin/go-cml
 
 go 1.12
 
