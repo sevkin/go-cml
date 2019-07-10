@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/sevkin/fsm"
 	"github.com/sevkin/go-cml/client"
+	"github.com/sevkin/go-fsm"
 )
 
 const (
