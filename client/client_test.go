@@ -224,3 +224,19 @@ func TestClientFileFailure(t *testing.T) {
 	err := client.File(buf, 5, "hw.txt")
 	assert.NotNil(t, err)
 }
+
+func TestClientFileServerError(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	buf := bytes.NewBufferString("helloworld")
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Post("/1c.php").
+		Reply(500).
+		BodyString("success")
+
+	err := client.File(buf, 5, "hw.txt")
+	assert.NotNil(t, err)
+}
