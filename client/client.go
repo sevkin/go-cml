@@ -6,6 +6,7 @@ package client
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -132,4 +133,56 @@ func (c *Client) Init() (bool, int, error) {
 		}
 	}
 	return false, 0, fmt.Errorf("init unexpected response: %s", res.String())
+}
+
+// piece returns readers that reads only piece of r with length == n
+func piece(r io.Reader, n int64) io.Reader {
+	pr, pw := io.Pipe()
+
+	go func() {
+		_, err := io.CopyN(pw, r, n)
+
+		if err != nil {
+			pw.CloseWithError(err)
+		} else {
+			pw.Close()
+		}
+	}()
+
+	return pr
+}
+
+// File uploads n bytes from r to server as fname
+// returns nil if success
+func (c *Client) File(r io.Reader, n int64, fname string) error {
+	query := map[string]string{
+		"type":     c._type,
+		"mode":     "file",
+		"filename": fname,
+	}
+	if len(c.sessID) > 0 {
+		query["sessid"] = c.sessID
+	}
+
+	res, err := c.R().
+		SetQueryParams(query).
+		SetBody(piece(r, n)).
+		Post("/")
+
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		return fmt.Errorf("init server error")
+	}
+
+	cred := strings.Split(res.String(), "\n")
+	if len(cred) >= 1 {
+		if cred[0] == "success" {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("init unexpected response: %s", res.String())
 }

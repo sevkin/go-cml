@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"net/http"
 	"testing"
 
@@ -172,5 +173,54 @@ func TestClientInitServerError(t *testing.T) {
 		BodyString("zip=yes\nfile_limit=1024\n")
 
 	_, _, err := client.Init()
+	assert.NotNil(t, err)
+}
+
+// ////////////////////////////////////////////////////////////////////////////
+
+func TestClientFileSuccess(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	buf := bytes.NewBufferString("helloworld")
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Post("/1c.php").
+		MatchParams(map[string]string{"mode": "file", "type": client._type, "filename": "hw.txt"}).
+		BodyString("hello").
+		Reply(200).
+		BodyString("success")
+
+	err := client.File(buf, 5, "hw.txt")
+	assert.Nil(t, err)
+
+	client.sessID = "aaqq"
+
+	gock.New("http://localhost").
+		Post("/1c.php").
+		MatchParams(map[string]string{"mode": "file", "type": client._type,
+			"filename": "hw.txt", "sessid": "aaqq"}).
+		BodyString("world").
+		Reply(200).
+		BodyString("success")
+
+	err = client.File(buf, 5, "hw.txt")
+	assert.Nil(t, err)
+}
+
+func TestClientFileFailure(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	buf := bytes.NewBufferString("helloworld")
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Post("/1c.php").
+		Reply(200).
+		BodyString("failure")
+
+	err := client.File(buf, 5, "hw.txt")
 	assert.NotNil(t, err)
 }
