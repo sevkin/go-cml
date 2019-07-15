@@ -186,3 +186,40 @@ func (c *Client) File(r io.Reader, n int64, fname string) error {
 
 	return fmt.Errorf("file: unexpected response: %s", res.String())
 }
+
+// Import process uploaded files
+// returns (true, nil) if in progress, (false, nil) if complete
+func (c *Client) Import(fname string) (bool, error) {
+	query := map[string]string{
+		"type":     c._type,
+		"mode":     "import",
+		"filename": fname,
+	}
+	if len(c.sessID) > 0 {
+		query["sessid"] = c.sessID
+	}
+
+	res, err := c.R().
+		SetQueryParams(query).
+		Get("/")
+
+	if err != nil {
+		return false, err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		return false, fmt.Errorf("import: server error")
+	}
+
+	cred := strings.Split(res.String(), "\n")
+	if len(cred) >= 1 {
+		switch cred[0] {
+		case "success":
+			return false, nil
+		case "progress":
+			return true, nil
+		}
+	}
+
+	return false, fmt.Errorf("import: unexpected response: %s", res.String())
+}

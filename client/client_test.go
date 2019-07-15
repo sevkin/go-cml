@@ -240,3 +240,70 @@ func TestClientFileServerError(t *testing.T) {
 	err := client.File(buf, 5, "hw.txt")
 	assert.NotNil(t, err)
 }
+
+// ////////////////////////////////////////////////////////////////////////////
+
+func TestClientImportSuccess(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		MatchParams(map[string]string{"mode": "import", "type": client._type, "filename": "hw.txt"}).
+		Reply(200).
+		BodyString("progress\nsometail")
+
+	progress, err := client.Import("hw.txt")
+	assert.Nil(t, err)
+	assert.True(t, progress)
+
+	client.sessID = "aaqq"
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		MatchParams(map[string]string{"mode": "import", "type": client._type,
+			"filename": "hw.txt", "sessid": "aaqq"}).
+		Reply(200).
+		BodyString("success\nsometail")
+
+	progress, err = client.Import("hw.txt")
+	assert.Nil(t, err)
+	assert.False(t, progress)
+}
+
+func TestClientImportFailure(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		Reply(200).
+		BodyString("failure")
+
+	_, err := client.Import("hw.txt")
+	assert.NotNil(t, err)
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		Reply(200).
+		BodyString("")
+
+	_, err = client.Import("hw.txt")
+	assert.NotNil(t, err)
+}
+
+func TestClientImportServerError(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		Reply(500).
+		BodyString("success")
+
+	_, err := client.Import("hw.txt")
+	assert.NotNil(t, err)
+}
