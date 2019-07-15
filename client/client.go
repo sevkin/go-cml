@@ -62,15 +62,15 @@ func (c *Client) Auth(username, password string) error {
 	}
 
 	if res.StatusCode() != http.StatusOK {
-		return fmt.Errorf("checkauth server error")
+		return fmt.Errorf("checkauth: server error")
 	}
 
 	cred := strings.Split(res.String(), "\n")
 	if len(cred) < 3 {
-		return fmt.Errorf("checkauth unexpected response: %s", res.String())
+		return fmt.Errorf("checkauth: unexpected response: %s", res.String())
 	}
 	if cred[0] != "success" {
-		return fmt.Errorf("checkauth unexpected response: %s", res.String())
+		return fmt.Errorf("checkauth: unexpected response: %s", res.String())
 	}
 
 	c.Cookies = make([]*http.Cookie, 0)
@@ -117,7 +117,7 @@ func (c *Client) Init() (bool, int, error) {
 	}
 
 	if res.StatusCode() != http.StatusOK {
-		return false, 0, fmt.Errorf("init server error")
+		return false, 0, fmt.Errorf("init: server error")
 	}
 
 	cred := strings.Split(res.String(), "\n")
@@ -132,7 +132,7 @@ func (c *Client) Init() (bool, int, error) {
 			}
 		}
 	}
-	return false, 0, fmt.Errorf("init unexpected response: %s", res.String())
+	return false, 0, fmt.Errorf("init: unexpected response: %s", res.String())
 }
 
 // piece returns readers that reads only piece of r with length == n
@@ -174,7 +174,7 @@ func (c *Client) File(r io.Reader, n int64, fname string) error {
 	}
 
 	if res.StatusCode() != http.StatusOK {
-		return fmt.Errorf("init server error")
+		return fmt.Errorf("file: server error")
 	}
 
 	cred := strings.Split(res.String(), "\n")
@@ -184,5 +184,5 @@ func (c *Client) File(r io.Reader, n int64, fname string) error {
 		}
 	}
 
-	return fmt.Errorf("init unexpected response: %s", res.String())
+	return fmt.Errorf("file: unexpected response: %s", res.String())
 }
