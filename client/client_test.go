@@ -203,7 +203,7 @@ func TestClientFileSuccess(t *testing.T) {
 			"filename": "hw.txt", "sessid": "aaqq"}).
 		BodyString("world").
 		Reply(200).
-		BodyString("success")
+		BodyString("success\nsometail")
 
 	err = client.File(buf, 5, "hw.txt")
 	assert.Nil(t, err)
