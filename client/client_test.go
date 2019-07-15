@@ -307,3 +307,102 @@ func TestClientImportServerError(t *testing.T) {
 	_, err := client.Import("hw.txt")
 	assert.NotNil(t, err)
 }
+
+// ////////////////////////////////////////////////////////////////////////////
+
+func TestClientDeactivateSucces(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		Reply(200).
+		BodyString("")
+
+	err := client.Deactivate()
+	assert.NotNil(t, err)
+
+	client.sessID = "aaqq"
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		Reply(200).
+		BodyString("")
+
+	err = client.Deactivate()
+	assert.NotNil(t, err)
+
+	client.timestamp = "123456"
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		MatchParams(map[string]string{"mode": "deactivate", "type": client._type,
+			"sessid": "aaqq", "timestamp": "123456"}).
+		Reply(200).
+		BodyString("")
+
+	err = client.Deactivate()
+	assert.Nil(t, err)
+}
+
+func TestClientDeactivateServerError(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+	client.sessID = "aaqq"
+	client.timestamp = "123456"
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		MatchParams(map[string]string{"mode": "deactivate", "type": client._type,
+			"sessid": "aaqq", "timestamp": "123456"}).
+		Reply(500).
+		BodyString("")
+
+	err := client.Deactivate()
+	assert.NotNil(t, err)
+}
+
+// ////////////////////////////////////////////////////////////////////////////
+
+func TestClientCompleteSucces(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		Reply(200).
+		BodyString("")
+
+	err := client.Complete()
+	assert.NotNil(t, err)
+
+	client.sessID = "aaqq"
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		MatchParams(map[string]string{"mode": "complete", "type": client._type, "sessid": "aaqq"}).
+		Reply(200).
+		BodyString("")
+
+	err = client.Complete()
+	assert.Nil(t, err)
+}
+
+func TestClientCompleteServerError(t *testing.T) {
+	client := New("http://localhost/1c.php", Catalog)
+	client.sessID = "aaqq"
+
+	defer gock.Off()
+
+	gock.New("http://localhost").
+		Get("/1c.php").
+		MatchParams(map[string]string{"mode": "complete", "type": client._type, "sessid": "aaqq"}).
+		Reply(500).
+		BodyString("")
+
+	err := client.Complete()
+	assert.NotNil(t, err)
+}

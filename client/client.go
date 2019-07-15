@@ -223,3 +223,59 @@ func (c *Client) Import(fname string) (bool, error) {
 
 	return false, fmt.Errorf("import: unexpected response: %s", res.String())
 }
+
+// Deactivate - деактивация незагруженных товаров и всей информации по ним (при полной выгрузке)
+func (c *Client) Deactivate() error {
+	if len(c.sessID) == 0 {
+		return fmt.Errorf("deactivate: can`t execute without sessid")
+	}
+
+	if len(c.timestamp) == 0 {
+		return fmt.Errorf("deactivate: can`t execute without timestamp")
+	}
+
+	res, err := c.R().
+		SetQueryParams(map[string]string{
+			"type":      c._type,
+			"mode":      "deactivate",
+			"sessid":    c.sessID,
+			"timestamp": c.timestamp,
+		}).
+		Get("/")
+
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		return fmt.Errorf("deactivate: server error")
+	}
+
+	return nil
+}
+
+// Complete - %)
+// "особо важного тут ничего не делается, а только бросается событие, что импорт успешно завершен"
+func (c *Client) Complete() error {
+	if len(c.sessID) == 0 {
+		return fmt.Errorf("complete: can`t execute without sessid")
+	}
+
+	res, err := c.R().
+		SetQueryParams(map[string]string{
+			"type":   c._type,
+			"mode":   "complete",
+			"sessid": c.sessID,
+		}).
+		Get("/")
+
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		return fmt.Errorf("complete: server error")
+	}
+
+	return nil
+}
