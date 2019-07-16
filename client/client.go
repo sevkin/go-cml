@@ -99,7 +99,7 @@ func (c *Client) Auth(username, password string) error {
 
 // Init - Запрос параметров от сайта
 // returns zip, file_limit, error
-func (c *Client) Init() (bool, int, error) {
+func (c *Client) Init() (bool, int64, error) {
 	query := map[string]string{
 		"type": c._type,
 		"mode": "init",
@@ -127,7 +127,7 @@ func (c *Client) Init() (bool, int, error) {
 			f := strings.SplitAfterN(cred[1], "file_limit=", 2)
 			if len(f) == 2 {
 				if flimit, err := strconv.Atoi(f[1]); err == nil {
-					return z[1] == "yes", flimit, nil
+					return z[1] == "yes", int64(flimit), nil
 				}
 			}
 		}

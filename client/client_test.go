@@ -128,7 +128,7 @@ func TestClientInitSuccess(t *testing.T) {
 
 	zip, flimit, err := client.Init()
 	assert.Nil(t, err)
-	assert.Equal(t, 1024, flimit)
+	assert.Equal(t, int64(1024), flimit)
 	assert.True(t, zip)
 }
 
