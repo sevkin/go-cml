@@ -47,6 +47,10 @@ func New(endpoint string, client Type) *Client {
 	}
 }
 
+func unexpectedResponse(method string, res *resty.Response) error {
+	return fmt.Errorf("%s: unexpected response: %v", method, res.String())
+}
+
 // Auth - Начало сеанса
 func (c *Client) Auth(username, password string) error {
 	res, err := c.R().
@@ -67,10 +71,10 @@ func (c *Client) Auth(username, password string) error {
 
 	cred := strings.Split(res.String(), "\n")
 	if len(cred) < 3 {
-		return fmt.Errorf("checkauth: unexpected response: %s", res.String())
+		return unexpectedResponse("checkauth", res)
 	}
 	if cred[0] != "success" {
-		return fmt.Errorf("checkauth: unexpected response: %s", res.String())
+		return unexpectedResponse("checkauth", res)
 	}
 
 	c.Cookies = make([]*http.Cookie, 0)
@@ -132,7 +136,7 @@ func (c *Client) Init() (bool, int64, error) {
 			}
 		}
 	}
-	return false, 0, fmt.Errorf("init: unexpected response: %s", res.String())
+	return false, 0, unexpectedResponse("init", res)
 }
 
 // piece returns readers that reads only piece of r with length == n
@@ -184,7 +188,7 @@ func (c *Client) File(r io.Reader, n int64, fname string) error {
 		}
 	}
 
-	return fmt.Errorf("file: unexpected response: %s", res.String())
+	return unexpectedResponse("file", res)
 }
 
 // Import process uploaded files
@@ -221,7 +225,7 @@ func (c *Client) Import(fname string) (bool, error) {
 		}
 	}
 
-	return false, fmt.Errorf("import: unexpected response: %s", res.String())
+	return false, unexpectedResponse("import", res)
 }
 
 // Deactivate - деактивация незагруженных товаров и всей информации по ним (при полной выгрузке)
