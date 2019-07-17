@@ -5,12 +5,15 @@
 package client
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"golang.org/x/net/html/charset"
 	resty "gopkg.in/resty.v1"
 )
 
@@ -48,7 +51,21 @@ func New(endpoint string, client Type) *Client {
 }
 
 func unexpectedResponse(method string, res *resty.Response) error {
-	return fmt.Errorf("%s: unexpected response: %v", method, res.String())
+	errorMsg := res.String()
+
+	contentType := res.Header()["Content-Type"]
+	if len(contentType) == 1 {
+		// convert cp1251 -> utf8 if possible
+		utf8, err := charset.NewReader(bytes.NewBuffer(res.Body()), contentType[0])
+		if err == nil {
+			buf, err := ioutil.ReadAll(utf8)
+			if err == nil {
+				errorMsg = string(buf[:])
+			}
+		}
+	}
+
+	return fmt.Errorf("%s: unexpected response: %v", method, errorMsg)
 }
 
 // Auth - Начало сеанса
